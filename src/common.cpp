@@ -339,6 +339,29 @@ std::vector<std::string> file_dialog(const std::vector<std::pair<std::string, st
 }
 #endif
 
+#if !defined(__APPLE__)
+std::string folder_dialog() {
+        static const int FILE_DIALOG_MAX_BUFFER = 16384;
+
+#if defined(_WIN32)
+    return std::string();
+#else
+        char buffer[FILE_DIALOG_MAX_BUFFER];
+        buffer[0] = '\0';
+
+        std::string cmd = "zenity --file-selection --directory 2> /dev/null";
+        FILE *output = popen(cmd.c_str(), "r");
+        if (output == nullptr)
+            throw std::runtime_error("popen() failed -- could not launch zenity!");
+        while (fgets(buffer, FILE_DIALOG_MAX_BUFFER, output) != NULL);
+        pclose(output);
+        std::string paths(buffer);
+        paths.erase(std::remove(paths.begin(), paths.end(), '\n'), paths.end());
+        return paths + "/";
+#endif
+    }
+#endif
+
 void Object::decRef(bool dealloc) const noexcept {
     --m_refCount;
     if (m_refCount == 0 && dealloc) {
