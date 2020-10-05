@@ -12,7 +12,9 @@
 #include <nanogui/screen.h>
 
 #if defined(_WIN32)
-#  include <windows.h>
+#include <windows.h>
+#include "shlobj.h"
+#include <string>
 #endif
 
 #include <nanogui/opengl.h>
@@ -344,7 +346,28 @@ std::string folder_dialog() {
         static const int FILE_DIALOG_MAX_BUFFER = 16384;
 
 #if defined(_WIN32)
-    return std::string();
+    std::string path;
+    HWND hwnd = NULL;
+    std::string title = "Open folder", folder = "";
+
+    BROWSEINFO br;
+    ZeroMemory(&br, sizeof(BROWSEINFO));
+    br.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
+    br.hwndOwner = hwnd;
+    br.lpszTitle = title.c_str();
+    br.lParam = (LPARAM)folder.c_str();
+
+    LPITEMIDLIST pidl = NULL;
+    if ((pidl = SHBrowseForFolder(&br)) != NULL)
+    {
+        char buffer[MAX_PATH];
+        if (SHGetPathFromIDList(pidl, buffer)) {
+            path = buffer;
+            path += "\\";
+        }
+    }
+
+    return path;
 #else
         char buffer[FILE_DIALOG_MAX_BUFFER];
         buffer[0] = '\0';
